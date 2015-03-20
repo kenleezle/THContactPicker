@@ -173,6 +173,7 @@
     if (self.selectedContactView){
 		// if there is a selected contact, deselect it
         [self.selectedContactView unSelect];
+        self.selectedContactView = nil;
         [self selectTextView];
     }
 
@@ -184,7 +185,7 @@
 		[self layoutScrollView];
 	} completion:^(BOOL finished) {
 		// scroll to bottom
-		_shouldSelectTextView = YES;
+		_shouldSelectTextView = [self isFirstResponder];
 		[self scrollToBottomWithAnimation:YES];
 		// after scroll animation [self selectTextView] will be called
 	}];
@@ -223,6 +224,15 @@
 
 - (void)resignFirstResponder {
     [self.textField resignFirstResponder];
+}
+
+- (BOOL)isFirstResponder {
+	if ([self.textField isFirstResponder]){
+		return YES;
+	} else if (self.selectedContactView != nil){
+		return YES;
+	}
+	return NO;
 }
 
 - (void)setVerticalPadding:(CGFloat)viewPadding {
@@ -283,6 +293,11 @@
     }
     
     [self removeContactByKey:contact];
+    [self selectTextView];
+
+    if (self.selectedContactView == contactView) {
+        self.selectedContactView = nil;
+    }
 }
 
 - (void)removeContactByKey:(id)contactKey {
@@ -295,7 +310,6 @@
     [self.contactKeys removeObject:contactKey];
 
 	self.textField.text = @"";
-	[self selectTextView];
 
 	// update layout
 	[self layoutContactViews];
@@ -506,6 +520,10 @@
 }
 
 - (void)contactViewWasUnSelected:(THContactView *)contactView {
+    if (self.selectedContactView == contactView){
+        self.selectedContactView = nil;
+    }
+
     [self selectTextView];
 	// transfer the text fromt he textField within the ContactView if there was any
 	// ***This is important if the user starts to type when a contact view is selected
